@@ -628,7 +628,11 @@ app.get('*', (req, res, next) => {
   res.sendFile(path.join(distPath, 'index.html'));
 });
 
-// 启动服务器
-app.listen(port, () => {
-  console.log(`🚀 [AnimDex Server] 后端服务器正运行在 http://localhost:${port}`);
-});
+// 启动服务器 (在 Vercel 环境下作为 Serverless Function 运行时不需要 listen)
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+  app.listen(port, () => {
+    console.log(`🚀 [AnimDex Server] 后端服务器正运行在 http://localhost:${port}`);
+  });
+}
+
+export default app;
