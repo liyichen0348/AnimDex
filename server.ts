@@ -82,6 +82,18 @@ const localAnimalEncyclopedia: Record<string, any> = {
     category: '昆虫',
     image_url: 'https://images.unsplash.com/photo-1615966741753-4876b6d510dc?auto=format&fit=crop&q=80&w=800'
   },
+  '大熊猫': {
+    scientific_name: 'Ailuropoda melanoleuca',
+    habitat: '高山竹林',
+    protection_status: '易危',
+    fun_fact: '大熊猫是中国特有物种，被誉为“活化石”和“中国国宝”。虽然属于食肉目，但它们99%的食物都是竹子。',
+    size: '120-180cm',
+    diet: '植食 (竹子)',
+    activity: '晨昏性/日行',
+    location: '中国，四川、陕西、甘肃',
+    category: '哺乳类',
+    image_url: 'https://images.unsplash.com/photo-1564349683136-77e08dba1ef7?auto=format&fit=crop&q=80&w=800'
+  },
   '家猫': {
     scientific_name: 'Felis catus',
     habitat: '人类居住区',
@@ -279,8 +291,7 @@ app.post('/api/identify', async (req, res) => {
           "diet": "食性分类 (例如: 杂食, 肉食, 草食)",
           "activity": "活跃规律 (例如: 夜行, 日行)",
           "location": "主要的分布地区或发现地点 (例如: 中国，四川省，横断山脉地区)",
-          "category": "物种主要门类分类 (只能是 '哺乳类'、'鸟类'、'昆虫'、'其他' 之一)",
-          "image_url": "该动物的高清 Unsplash 真实标准配图 URL"
+          "category": "物种主要门类分类 (只能是 '哺乳类'、'鸟类'、'昆虫'、'其他' 之一)"
         }`;
 
         const response = await ai.models.generateContent({
@@ -291,7 +302,8 @@ app.post('/api/identify', async (req, res) => {
 
         const textResponse = response.text || '';
         animalInfo = JSON.parse(textResponse.trim());
-        if (animalInfo && animalInfo.image_url) {
+        // 如果百度没返回图片，且 AI 碰巧返回了图片，再考虑兜底
+        if (!baikeImg && animalInfo && animalInfo.image_url) {
           baikeImg = animalInfo.image_url;
         }
       } catch (geminiErr: any) {
@@ -341,7 +353,8 @@ app.post('/api/identify', async (req, res) => {
       );
 
       if (!foundKey) {
-        const keywords = ['猫', '犬', '狗', '虎', '松鼠', '蝶', '鸟', '熊猫', '仙', '猴', '狮', '豹', '熊'];
+        // 将较长的词放在前面，避免“大熊猫”被“猫”提前匹配
+        const keywords = ['熊猫', '松鼠', '猫', '犬', '狗', '虎', '蝶', '鸟', '仙', '猴', '狮', '豹', '熊'];
         const matchedKeyword = keywords.find(kw => baiduAnimalName.includes(kw));
         if (matchedKeyword) {
           foundKey = Object.keys(localAnimalEncyclopedia).find(key => 
@@ -368,8 +381,8 @@ app.post('/api/identify', async (req, res) => {
       if (matchedKey) {
         finalCategory = localAnimalEncyclopedia[matchedKey].category;
       } else {
-        // 2. 关键字模糊猜测
-        const mammalKeywords = ['猫', '犬', '狗', '虎', '狮', '豹', '熊', '象', '鹿', '猴', '猩', '猿', '鼠', '兔', '狐', '狼', '猪', '牛', '羊', '马', '貂', '獾', '獭', '鼬', '貉', '羚', '驼', '驴', '骡', '猩', '狒', '考拉', '熊猫', '袋鼠', '刺猬', '蝙蝠', '海豚', '鲸', '海豹', '柯基', '哈士奇', '柴犬', '獒'];
+        // 2. 关键字模糊猜测 (长词优先)
+        const mammalKeywords = ['考拉', '熊猫', '袋鼠', '刺猬', '蝙蝠', '海豚', '海豹', '柯基', '哈士奇', '柴犬', '猫', '犬', '狗', '虎', '狮', '豹', '熊', '象', '鹿', '猴', '猩', '猿', '鼠', '兔', '狐', '狼', '猪', '牛', '羊', '马', '貂', '獾', '獭', '鼬', '貉', '羚', '驼', '驴', '骡', '猩', '狒', '鲸', '獒'];
         const birdKeywords = ['鸟', '翠', '雕', '鹰', '燕', '雀', '鸥', '鸭', '鹅', '鸡', '鹭', '鹄', '鸽', '鸪', '鸨', '鹳', '鹤', '鸬', '鹚', '鸨', '鸵'];
         const insectKeywords = ['蝶', '蝉', '仙', '甲', '蚁', '蜂', '虫', '蛛', '蝇', '蚊', '蛾', '螂', '螳', '蝗', '蚱', '蜻', '蜓', '蝎'];
 
